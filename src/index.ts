@@ -3,6 +3,7 @@ import { Command } from 'commander';
 import { render } from 'ink';
 import React from 'react';
 import WelcomeScreen from './components/welcome.js';
+import process from 'process';
 
 const program = new Command();
 
@@ -16,12 +17,18 @@ program
   .description('Start learning about a topic')
   .argument('[topic]', 'topic to learn about')
   .action((topic) => {
-    render(React.createElement(WelcomeScreen, { topic }));
+    render(React.createElement(WelcomeScreen, { topic }), {
+      stdin: process.stdin,
+      stdout: process.stdout,
+    });
   });
 
 // Default action - show welcome screen
 program.action(() => {
-  render(React.createElement(WelcomeScreen, {}));
+  render(React.createElement(WelcomeScreen, {}), {
+    stdin: process.stdin,
+    stdout: process.stdout,
+  });
 });
 
 program.parse();
