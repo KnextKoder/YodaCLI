@@ -2,7 +2,7 @@
 import { Command } from 'commander';
 import { render } from 'ink';
 import React from 'react';
-import WelcomeScreen from './components/WelcomeScreen.js';
+import WelcomeScreen from './components/welcome.js';
 const program = new Command();
 program
     .name('yoda')
