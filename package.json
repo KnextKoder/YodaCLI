@@ -1,0 +1,52 @@
+{
+  "name": "yoda-cli",
+  "version": "0.0.1",
+  "description": "A Yoda themed CLI tool that helps you learn everything about anything",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "yoda": "bin/yoda"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "prepare": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "cli",
+    "yoda",
+    "learning",
+    "ai",
+    "star-wars",
+    "education"
+  ],
+  "author": "KnextKoder",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KnextKoder/YodaCLI.git"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "assets"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "ink": "^4.4.1",
+    "react": "^18.2.0",
+    "commander": "^11.1.0",
+    "chalk": "^5.3.0",
+    "boxen": "^7.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "@types/react": "^18.2.45",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}
