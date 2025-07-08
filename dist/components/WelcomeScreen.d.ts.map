@@ -1,1 +1,0 @@
-{"version":3,"file":"WelcomeScreen.d.ts","sourceRoot":"","sources":["../../src/components/WelcomeScreen.tsx"],"names":[],"mappings":"AAAA,OAAO,KAAK,MAAM,OAAO,CAAC;AAK1B,UAAU,kBAAkB;IAC1B,KAAK,CAAC,EAAE,MAAM,CAAC;CAChB;AAED,QAAA,MAAM,aAAa,EAAE,KAAK,CAAC,EAAE,CAAC,kBAAkB,CAoD/C,CAAC;AAEF,eAAe,aAAa,CAAC"}
