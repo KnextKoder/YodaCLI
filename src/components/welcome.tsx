@@ -6,6 +6,7 @@ import boxen from 'boxen';
 import TextInput from 'ink-text-input';
 import SelectInput from 'ink-select-input';
 import crypto from 'crypto';
+import NewTopicScreen from './newTopicScreen.js';
 
 interface WelcomeScreenProps {
   topic?: string;
@@ -45,6 +46,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ topic }) => {
   const [menuActive, setMenuActive] = useState(true);
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [selectedProvider, setSelectedProvider] = useState<string | null>(storedApiKeys.length > 0 ? storedApiKeys[0].provider : null);
+  const [screen, setScreen] = useState<'main' | 'newTopic'>('main');
 
   // Decrypt API key for the currently selected provider only when needed
   const apiKey = selectedProvider ? storedApiKeys.find(key => key.provider === selectedProvider)?.apiKeyEnc : undefined;
@@ -121,16 +123,22 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ topic }) => {
       : '';
 
   const providerItems = [
-    { label: 'OpenAI', value: 'openai' },
-    { label: 'Google', value: 'google' },
-    { label: 'Anthropic', value: 'anthropic' },
-    { label: 'Groq', value: 'groq' },
-    { label: 'Exit', value: 'exit' },
+    { label: 'anthropic', value: 'anthropic' },
+    { label: 'google', value: 'google' },
+    { label: 'openAI', value: 'openai' },
+    { label: 'groq', value: 'groq' },
+    { label: 'go back', value: 'back' },
+    { label: 'exit', value: 'exit' },
   ];
 
   const handleProviderSelect = (item: { value: string }) => {
     if (item.value === 'exit') {
       process.exit(0);
+    }
+    if (item.value === 'back') {
+      setMode('prompt');
+      setMenuActive(true);
+      return;
     }
     setSelectedProvider(item.value);
     // Check if API key for selected provider exists and pre-fill input
@@ -158,8 +166,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ topic }) => {
     } else if (item.value === 'provider') {
       setMode('provider');
     } else if (item.value === 'learn') {
-      // TODO: Implement learn logic
-      setMode('prompt'); // Temporarily go to prompt mode for input
+      setScreen('newTopic');
     } else if (item.value === 'continue') {
       // TODO: Implement continue logic
       setMode('prompt'); // Temporarily go to prompt mode for input
@@ -171,6 +178,10 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ topic }) => {
       {label}
     </Text>
   );
+
+  if (screen === 'newTopic') {
+    return <NewTopicScreen />;
+  }
 
   if (mode === 'provider') {
     return (
