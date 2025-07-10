@@ -12,29 +12,11 @@ interface WelcomeScreenProps {
   topic?: string;
 }
 
-// --- Simple encryption helpers ---
-const ENCRYPTION_KEY = crypto.createHash('sha256').update('yoda-cli-secret').digest(); // 32 bytes
-const IV_LENGTH = 16;
+import { encrypt, decrypt } from '../funcs/crypto.js';
 
-function encrypt(text: string): string {
-  const iv = crypto.randomBytes(IV_LENGTH);
-  const cipher = crypto.createCipheriv('aes-256-cbc', ENCRYPTION_KEY, iv);
-  let encrypted = cipher.update(text, 'utf8', 'base64');
-  encrypted += cipher.final('base64');
-  return iv.toString('base64') + ':' + encrypted;
-}
+type Provider = 'openai' | 'google' | 'anthropic' | 'groq';
 
-function decrypt(text: string): string {
-  const [ivBase64, encrypted] = text.split(':');
-  if (!ivBase64 || !encrypted) return '';
-  const iv = Buffer.from(ivBase64, 'base64');
-  const decipher = crypto.createDecipheriv('aes-256-cbc', ENCRYPTION_KEY, iv);
-  let decrypted = decipher.update(encrypted, 'base64', 'utf8');
-  decrypted += decipher.final('utf8');
-  return decrypted;
-}
-
-const config = new Conf<{ hasRunBefore: boolean; userName?: string; apiKeys?: { provider: string; apiKeyEnc: string }[] }>({ projectName: 'yoda-cli' });
+const config = new Conf<{ hasRunBefore: boolean; userName?: string; apiKeys?: { provider: Provider; apiKeyEnc: string }[] }>({ projectName: 'yoda-cli' });
 const hasRunBefore = config.get('hasRunBefore');
 const userName = config.get('userName');
 const storedApiKeys = config.get('apiKeys') || [];
@@ -45,7 +27,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ topic }) => {
   const [mode, setMode] = useState<'provider' | 'apiKey' | 'name' | 'prompt'>(storedApiKeys.length === 0 ? 'provider' : !hasRunBefore ? 'name' : 'prompt');
   const [menuActive, setMenuActive] = useState(true);
   const [apiKeyInput, setApiKeyInput] = useState('');
-  const [selectedProvider, setSelectedProvider] = useState<string | null>(storedApiKeys.length > 0 ? storedApiKeys[0].provider : null);
+  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(storedApiKeys.length > 0 ? storedApiKeys[0].provider : null);
   const [screen, setScreen] = useState<'main' | 'newTopic'>('main');
 
   // Decrypt API key for the currently selected provider only when needed
@@ -140,7 +122,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ topic }) => {
       setMenuActive(true);
       return;
     }
-    setSelectedProvider(item.value);
+    setSelectedProvider(item.value as Provider);
     // Check if API key for selected provider exists and pre-fill input
     const existingKey = storedApiKeys.find(key => key.provider === item.value);
     if (existingKey) {
@@ -180,7 +162,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ topic }) => {
   );
 
   if (screen === 'newTopic') {
-    return <NewTopicScreen />;
+    return <NewTopicScreen AI={storedApiKeys} />;
   }
 
   if (mode === 'provider') {

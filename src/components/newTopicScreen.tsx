@@ -2,31 +2,70 @@ import { useState } from 'react';
 import { Box, Text } from 'ink';
 import InkTextInput from 'ink-text-input';
 import Spinner from 'ink-spinner';
+import SelectInput from 'ink-select-input';
+import { getAIResponse } from '../funcs/AI.js';
+import { decrypt } from '../funcs/crypto.js';
+import { CoreMessage } from 'ai';
 
-interface Message {
-  sender: 'user' | 'yoda';
-  text: string;
-}
 
-const NewTopicScreen = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
+
+type Provider = 'openai' | 'google' | 'anthropic' | 'groq';
+
+const NewTopicScreen = ({ AI }: { AI: { provider: Provider; apiKeyEnc: string }[] }) => {
+  const [messages, setMessages] = useState<CoreMessage[]>([]);
   const [input, setInput] = useState('');
   const [isYodaTyping, setIsYodaTyping] = useState(false);
+  const [showProviderSelection, setShowProviderSelection] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
+
+  const callAI = async (provider: Provider, currentMessages: CoreMessage[]) => {
+    setIsYodaTyping(true);
+    const apiKeyEnc = AI.find(ai => ai.provider === provider)?.apiKeyEnc;
+
+    if (!apiKeyEnc) {
+      setMessages(prev => [...prev, { role: 'assistant', content: 'An API key for the selected provider, I could not find. Hrmm.' }]);
+      setIsYodaTyping(false);
+      return;
+    }
+
+    const apiKey = decrypt(apiKeyEnc);
+
+    try {
+      const { text } = await getAIResponse(provider, apiKey, currentMessages);
+      setMessages(prev => [...prev, { role: 'assistant', content: text }]);
+    } catch (error: any) {
+      setMessages(prev => [...prev, { role: 'assistant', content: `Mmm, an error occurred: ${error.message}` }]);
+    } finally {
+      setIsYodaTyping(false);
+    }
+  };
+
+	const handleProviderSelect = (item: { value: Provider }) => {
+    setShowProviderSelection(false);
+    setSelectedProvider(item.value);
+    callAI(item.value, messages);
+  };
 
   const handleSubmit = (value: string) => {
     if (value.trim() === '' || isYodaTyping) return;
 
-    const userMessage: Message = { sender: 'user', text: value };
-    setMessages(prevMessages => [...prevMessages, userMessage]);
+    const userMessage: CoreMessage = { role: 'user', content: value };
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     setInput('');
-    setIsYodaTyping(true);
 
-    setTimeout(() => {
-      const yodaReply: Message = { sender: 'yoda', text: `Echo: "${value}"` };
-      setMessages(prevMessages => [...prevMessages, yodaReply]);
-      setIsYodaTyping(false);
-    }, 2000);
+    if (!selectedProvider) {
+      setShowProviderSelection(true);
+    } else {
+      callAI(selectedProvider, newMessages);
+    }
   };
+
+  const MenuItem = ({ isSelected = false, label }: { isSelected?: boolean; label: string }) => (
+    <Text color={isSelected ? 'yellow' : 'gray'} bold={isSelected}>
+      {label}
+    </Text>
+  );
 
   return (
     <Box flexDirection="column" padding={1} width="100%">
@@ -39,12 +78,12 @@ const NewTopicScreen = () => {
         {messages.map((msg, index) => (
           <Box key={index} flexDirection="column" marginBottom={1}>
             <Box>
-              <Text color={msg.sender === 'user' ? 'green' : 'yellow'} bold>
-                {msg.sender === 'user' ? 'Padawan (You)' : 'Yoda'}
+              <Text color={msg.role === 'user' ? 'green' : 'yellow'} bold>
+                {msg.role === 'user' ? 'Padawan (You)' : 'Yoda'}
               </Text>
             </Box>
             <Box marginLeft={2}>
-              <Text>{msg.text}</Text>
+              <Text>{String(msg.content)}</Text>
             </Box>
           </Box>
         ))}
@@ -57,17 +96,29 @@ const NewTopicScreen = () => {
           </Box>
         )}
       </Box>
-      <Box borderStyle="round" borderColor='yellow' paddingX={1}>
-        <Text color='yellow'>{"> "}</Text>
-        <InkTextInput
-          value={input}
-          onChange={setInput}
-          onSubmit={()=>{
-            handleSubmit(input);
-          }}
-          placeholder="Listening to you I am..."
-        />
-      </Box>
+      {showProviderSelection ? (
+				<Box flexDirection='column'>
+					<Text>A provider, you must choose:</Text>
+					<SelectInput
+						items={AI.map((ai) => ({ label: ai.provider, value: ai.provider }))}
+						onSelect={(item) => handleProviderSelect({ value: item.value as Provider })}
+            itemComponent={MenuItem} 
+            indicatorComponent={({ isSelected }) => (isSelected ? <Text color="yellow">👉 </Text> : <Text>  </Text>)}
+					/>
+				</Box>
+			) : (
+				<Box borderStyle="round" borderColor="yellow" paddingX={1}>
+					<Text color="yellow">{'> '}</Text>
+					<InkTextInput
+						value={input}
+						onChange={setInput}
+						onSubmit={() => {
+							handleSubmit(input);
+						}}
+						placeholder="Listening to you I am..."
+					/>
+				</Box>
+			)}
     </Box>
   );
 };
